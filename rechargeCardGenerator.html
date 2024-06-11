@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recharge Card Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    
+</head>
+
+<body>
+
+    <h1>Recharge Card Generator</h1>
+
+    <div class="container d-flex align-items-center justify-content-between gap-lg-5">
+        <div>
+            <select name="networks" id="network" class="p-2 m-3">
+                <option value="MTN">MTN</option>
+                <option value="Glo">Glo</option>
+                <option value="Airtel">Airtel</option>
+                <option value="9mobile">9mobile</option>
+            </select>
+
+            <select name="amount" id="amount" class="p-2">
+                <option value="100">100</option>
+                <option value="200">200</option>
+                <option value="500">500</option>
+                <option value="1000">1,000</option>
+                <option value="2000">2,000</option>
+            </select>
+
+            <p class="m-3">Code: <input type="text" id="generatedCode" class="p-1 m-2 " disabled> </p>
+            <button class="btn btn-secondary" onclick="generateCode()">Generate Code</button>
+            <button class="btn btn-success " onclick="saveCode()">Save Code</button>
+
+        </div>
+        <div>
+            <h5>Recharge Pin</h5>
+
+            <input type="text" id="code">
+            <button class="btn btn-primary" onclick="loadCode()">Recharge Pin</button>
+        </div>
+    </div>
+
+    <p id="codes" class="container-fluid "></p>
+
+    <table id="codeTable" class="table">
+        <thead>
+            <tr>
+                <th scope="col">S/N</th>
+                <th scope="col">Network Operator</th>
+                <th scope="col">Amount</th>
+                <th scope="col">Pin</th>
+                <th scope="col">Code</th>
+                <th scope="col">Status</th>
+                <th scope="col">Date Created</th>
+                <th scope="col">Date Used</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        let arr = []
+        if (localStorage.getItem('Codes') === null) {
+            localStorage.setItem('Codes', arr)
+        }
+        else{
+            arr = JSON.parse(localStorage.getItem('Codes')) ;
+
+        }
+    
+        function generateCode() {
+            const generatedCode = Math.floor(Math.random() * 10000000000) + 1;
+            document.getElementById('generatedCode').value = generatedCode;
+            Swal.fire({
+            title: "Pin generated succesfully!",
+            text: "You have successfully generated a recharge pin",
+            icon: "success"
+            });
+            
+            return generatedCode;
+           
+        }
+    
+        function saveCode() {
+            const generatedCode = document.getElementById('generatedCode').value.trim();
+            const now = new Date();
+            const date = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}`;
+            let network = document.getElementById('network').value;
+    
+            if (network == 'MTN') {
+                arr.push({ number: `*555*${generatedCode}#`, status: 'unused', network: network, amount: document.getElementById('amount').value, dateCreated: date, dateUsed: 'Not used yet', pin: generatedCode });
+            } else if (network == 'Airtel') {
+                arr.push({ number: `*126*${generatedCode}#`, status: 'unused', network: network, amount: document.getElementById('amount').value, dateCreated: date, dateUsed: 'Not used yet', pin: generatedCode });
+            } else if (network == 'Glo') {
+                arr.push({ number: `*123*${generatedCode}#`, status: 'unused', network: network, amount: document.getElementById('amount').value, dateCreated: date, dateUsed: 'Not used yet', pin: generatedCode });
+            } else if (network == '9mobile') {
+                arr.push({ number: `*222*${generatedCode}#`, status: 'unused', network: network, amount: document.getElementById('amount').value, dateCreated: date, dateUsed: 'Not used yet', pin: generatedCode });
+            }
+    
+            localStorage.setItem('Codes', JSON.stringify(arr));
+            updateTable();
+            Swal.fire({
+                title: "Pin saved!",
+                text: "Your generated pin has been saved in the table",
+                icon: "success"
+                });
+
+            document.getElementById('generatedCode').value = ''
+        }
+    
+        function loadCode() {
+            const codeToLoad = document.getElementById('code').value.trim();
+            const codeIndex = arr.findIndex(item => item.number === codeToLoad);
+    
+            if (codeIndex !== -1) {
+                if (arr[codeIndex].status === 'used') {
+                    Swal.fire({
+                        title: "Recharge failed!",
+                        text: "This pin has already been used",
+                        icon: "error"
+                        });
+                } else {
+                    arr[codeIndex].status = 'used';
+                    const now = new Date();
+                    const date = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}`;
+                    arr[codeIndex].dateUsed = date;
+                    localStorage.setItem('Codes', JSON.stringify(arr));
+                            Swal.fire({
+                        title: "Recharge Successfull",
+                        text: "You have successfully recharged.",
+                        icon: "success"
+                        });
+                        updateTable();
+                }
+            } else {
+                Swal.fire({
+                title: "Invalid Code!",
+                text: `The Pin your entered is invalid or not found!, Please try again`,
+                icon: "error"
+                });;
+            }
+        }
+    
+        function updateTable() {
+            const tableBody = document.querySelector('#codeTable tbody');
+            tableBody.innerHTML = '';
+    
+            arr.forEach((item, index) => {
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.network}</td>
+                        <td>${item.amount}</td>
+                        <td>${item.number}</td>
+                        <td>${item.pin}</td>
+                        <td>${item.status}</td>
+                        <td>${item.dateCreated}</td>
+                        <td>${item.dateUsed}</td>
+                        <td><button class="btn btn-danger" onclick="deleteCode(${index})">Delete</button></td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+                
+            });
+        }
+
+
+    function deleteCode(index) {
+        Swal.fire({
+        title: "Are you sure?",
+        text: "Are you sure you want to delete ",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!"
+        }).then((result) => {
+        if (result.isConfirmed) {
+            arr.splice(index, 1); 
+            localStorage.setItem('Codes', JSON.stringify(arr)); 
+            updateTable();
+
+            Swal.fire({
+            title: "Deleted!",
+            text: "Your Pin has been deleted.",
+            icon: "success"
+            });
+        }
+        });
+       
+
+    }
+        window.onload = updateTable;
+    </script>
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+
+</body>
+
+</html>
